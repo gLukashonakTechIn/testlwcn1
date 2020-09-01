@@ -5,6 +5,7 @@ public inherited sharing class LWCController {
         return [SELECT Id, FirstName,LastName, Phone, Email FROM Contact ORDER BY Name limit 10];
     }
     
+    
     @AuraEnabled
     public static void deleteContacts(list<Id> lstConIds){
         try {

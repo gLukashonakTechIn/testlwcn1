@@ -23,6 +23,7 @@ const columns = [
     }
 ];
 
+
 export default class lwcTest extends LightningElement {
     @track data;
     @track columns = columns;
