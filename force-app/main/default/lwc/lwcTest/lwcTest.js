@@ -1,102 +1,62 @@
-import {LightningElement, track, wire} from 'lwc';
-import getContacts from '@salesforce/apex/LWCController.getContacts';
-import delSelectedCons from '@salesforce/apex/LWCController.deleteContacts';
-import {ShowToastEvent} from 'lightning/platformShowToastEvent';
-import {refreshApex} from '@salesforce/apex';
+import { LightningElement, wire, track } from 'lwc';
+import getContactList from '@salesforce/apex/ContactController.getContactList';
+import { updateRecord } from 'lightning/uiRecordApi';
+import { refreshApex } from '@salesforce/apex';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import FIRSTNAME_FIELD from '@salesforce/schema/Contact.FirstName';
+import LASTNAME_FIELD from '@salesforce/schema/Contact.LastName';
+import ID_FIELD from '@salesforce/schema/Contact.Id';
 
 
-const columns = [
-    {
-        label: 'FirstName',
-        fieldName: 'FirstName'
-    }, {
-        label: 'LastName',
-        fieldName: 'LastName'
-    }, {
-        label: 'Phone',
-        fieldName: 'Phone',
-        type: 'phone'
-    }, {
-        label: 'Email',
-        fieldName: 'Email',
-        type: 'email'
-    }
+const COLS = [
+    { label: 'First Name', fieldName: 'FirstName', editable: true },
+    { label: 'Last Name', fieldName: 'LastName', editable: true },
+    { label: 'CleanStatus', fieldName: 'CleanStatus', editable: true },
+    { label: 'Action', type: 'button', initialWidth: 100, typeAttributes:
+        { label: { fieldName: 'actionLabel'}, title: 'Delete', name: 'delete_row', iconName: 'utility:delete'}}
 ];
 
 
-export default class lwcTest extends LightningElement {
-    @track data;
-    @track columns = columns;
-    @track buttonLabel = 'Delete Selected Contacts';
-    @track isTrue = false;
-    @track recordsCount = 0;
-    selectedRecords = [];
-    refreshTable;
-    error;
-    @wire(getContacts)
-    contacts(result) {
-        this.refreshTable = result;
-        if (result.data) {
-            this.data = result.data;
-            this.error = undefined;
+export default class DatatableUpdateExample extends LightningElement {
 
-        } else if (result.error) {
-            this.error = result.error;
-            this.data = undefined;
-        }
-    }
+    @track error;
+    @track columns = COLS;
+    @track draftValues = [];
 
+    @wire(getContactList)
+    contact;
 
-    getSelectedRecords(event) {
-        const selectedRows = event.detail.selectedRows;
-        this.recordsCount = event.detail.selectedRows.length;
-        let conIds = new Set();
-        for (let i = 0; i < selectedRows.length; i++) {
-            conIds.add(selectedRows[i].Id);
-        }
-        this.selectedRecords = Array.from(conIds);
+    handleSave(event) {
 
-        window.console.log('selectedRecords ====> ' +this.selectedRecords);
-    }
+        const fields = {};
+        fields[ID_FIELD.fieldApiName] = event.detail.draftValues[0].Id;
+        fields[FIRSTNAME_FIELD.fieldApiName] = event.detail.draftValues[0].FirstName;
+        fields[LASTNAME_FIELD.fieldApiName] = event.detail.draftValues[0].LastName;
 
-    deleteAccounts() {
-        if (this.selectedRecords) {
-            this.buttonLabel = 'Processing....';
-            this.isTrue = true;
-            this.deleteCons();
-        }
-    }
+        const recordInput = {fields};
 
-
-    deleteCons() {
-        delSelectedCons({lstConIds: this.selectedRecords})
-        .then(result => {
-            window.console.log('result ====> ' + result);
-            this.buttonLabel = 'Delete Selected Contacts';
-            this.isTrue = false;
+        updateRecord(recordInput)
+        .then(() => {
             this.dispatchEvent(
                 new ShowToastEvent({
-                    title: 'Success!!', 
-                    message: this.recordsCount + ' Contacts are deleted.', 
+                    title: 'Success',
+                    message: 'Contact updated',
                     variant: 'success'
-                }),
+                })
             );
-            
-            this.template.querySelector('lightning-datatable').selectedRows = [];
-            this.recordsCount = 0;
-            return refreshApex(this.refreshTable);
+            // Clear all draft values
+            this.draftValues = [];
 
-        })
-        .catch(error => {
-            window.console.log(error);
+            // Display fresh data in the datatable
+            return refreshApex(this.contact);
+        }).catch(error => {
             this.dispatchEvent(
                 new ShowToastEvent({
-                    title: 'Error while getting Contacts', 
-                    message: error.message, 
+                    title: 'Error creating record',
+                    message: error.body.message,
                     variant: 'error'
-                }),
+                })
             );
         });
-    }  
-
+    }
 }

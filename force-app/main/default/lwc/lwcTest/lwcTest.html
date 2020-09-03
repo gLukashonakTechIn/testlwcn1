@@ -1,30 +1,19 @@
 <template>
-    <lightning-card title="Delete Selected Rows in Datatable" icon-name="standard:contact" > <br/>
-       <div style="width: auto;">
-           <template if:true={data}>
-                   <div class="slds-grid slds-gutters">
-                           <div class="slds-col">
-                             <span><p style="margin-left: 5%">Selected Records: <b style="color:red;">{recordsCount}</b></p></span>
-                           </div>
-                           <div class="slds-col">
-                               <span>                    
-                                   <lightning-button label={buttonLabel}
-                                                     icon-name="utility:delete"
-                                                     disabled={isTrue}
-                                                     variant="destructive" 
-                                                     onclick={deleteAccounts}
-                                                     style="margin-left: 40%"></lightning-button>
-                                                     
-                               </span>
-                           </div>
-                       </div><br/>
+    <lightning-card title="Datatable Example" icon-name="custom:custom63">
 
-                   <lightning-datatable data={data}
-                                    columns={columns}
-                                    key-field="id"
-                                    onrowselection={getSelectedRecords}></lightning-datatable>
-           </template>
-
-       </div>
-   </lightning-card>   
+        <div class="slds-m-around_medium">
+            <template if:true={contact.data}>
+                <lightning-datatable
+                    key-field="Id"
+                    data={contact.data}
+                    columns={columns}
+                    onsave={handleSave}
+                    draft-values={draftValues}>
+                </lightning-datatable>
+            </template>
+            <template if:true={contact.error}>
+                <!-- handle Apex error -->
+            </template>
+        </div>
+    </lightning-card>
 </template>
